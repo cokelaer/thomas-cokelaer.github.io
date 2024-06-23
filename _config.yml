@@ -1,0 +1,14 @@
+title: Welcome to Thomas Cokelaer' github home page.
+description: resources related to my github activities
+theme: jekyll-theme-cayman
+show_downloads: false
+url: https://thomas-cokelaer.github.io
+
+# --- Navigation bar options --- #
+
+# List of links in the navigation bar
+navbar-links:
+  About Me: "aboutme"
+  Post: "post"
+
+
