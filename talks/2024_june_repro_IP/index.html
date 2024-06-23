@@ -1,0 +1,3943 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <title></title>
+    <link rel="stylesheet" href="dist/reveal.css" />
+    <link rel="stylesheet" href="dist/theme/white.css" id="theme" />
+    <link rel="stylesheet" href="plugin/highlight/zenburn.css" />
+	<link rel="stylesheet" href="css/layout.css" />
+	<link rel="stylesheet" href="plugin/customcontrols/style.css">
+
+
+
+    <script defer src="dist/fontawesome/all.min.js"></script>
+
+	<script type="text/javascript">
+		var forgetPop = true;
+		function onPopState(event) {
+			if(forgetPop){
+				forgetPop = false;
+			} else {
+				parent.postMessage(event.target.location.href, "app://obsidian.md");
+			}
+        }
+		window.onpopstate = onPopState;
+		window.onmessage = event => {
+			if(event.data == "reload"){
+				window.document.location.reload();
+			}
+			forgetPop = true;
+		}
+
+		function fitElements(){
+			const itemsToFit = document.getElementsByClassName('fitText');
+			for (const item in itemsToFit) {
+				if (Object.hasOwnProperty.call(itemsToFit, item)) {
+					var element = itemsToFit[item];
+					fitElement(element,1, 1000);
+					element.classList.remove('fitText');
+				}
+			}
+		}
+
+		function fitElement(element, start, end){
+
+			let size = (end + start) / 2;
+			element.style.fontSize = `${size}px`;
+
+			if(Math.abs(start - end) < 1){
+				while(element.scrollHeight > element.offsetHeight){
+					size--;
+					element.style.fontSize = `${size}px`;
+				}
+				return;
+			}
+
+			if(element.scrollHeight > element.offsetHeight){
+				fitElement(element, start, size);
+			} else {
+				fitElement(element, size, end);
+			}		
+		}
+
+
+		document.onreadystatechange = () => {
+			fitElements();
+			if (document.readyState === 'complete') {
+				if (window.location.href.indexOf("?export") != -1){
+					parent.postMessage(event.target.location.href, "app://obsidian.md");
+				}
+				if (window.location.href.indexOf("print-pdf") != -1){
+					let stateCheck = setInterval(() => {
+						clearInterval(stateCheck);
+						window.print();
+					}, 250);
+				}
+			}
+	};
+
+
+        </script>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides"><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-background-image="Images/covid.jpg" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 20 20; box-sizing: border-box; opacity: 0.8; border: 4px solid white; position: absolute; left: 10%; top: 27.5%; height: 45%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+
+<div class="block">
+
+Introduction to Snakemake <br><!-- .element: style="font-size: 40px; color: white" -->
+
+Thomas Cokelaer <!-- .element: style="font-size: 30px; color: #00ffff" -->
+
+Formation Reproducibilité, T. Cokelaer, F. Lemoine, E. Kornobis, B Néron, A. Perrin
+<!-- .element: style="font-size: 20px; color: #00ffff" -->
+
+Institut Pasteur, Paris, June 2024 <!-- .element: style="font-size: 20px; color: #00ffff" -->
+</div>
+
+ 
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="color: blue; text-align: left; position: absolute; left: 10%; top: 40%; height: 20%; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<u>Part I:  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;
+</u><br>
+What is Snakemake ?
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 90px; height: 100px; object-fit: fill">
+
+</div>
+</div>
+
+<aside class="notes"><p>what is a workflow manager, importance of snakemake in bioinformatics</p>
+</aside></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Introduction to Snakemake
+</div>
+
+
+ </div>
+
+
+
+
+Snakemake is a workflow manager
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Introduction to Snakemake
+</div>
+
+
+ </div>
+
+
+
+
+Snakemake is a workflow manager
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+<span style="border:3px solid black">
+<img src="Images/citation_snakemake.png" alt="" style="object-fit: scale-down">
+
+</span>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Importance of Workflow Management in Bioinformatics
+</div>
+
+
+ </div>
+
+
+
+
+<div style="font-size: 0.6em;">
+<b>Reproducibility</b>: Ensures that analyses can be repeated and verified by others, critical for scientific research. 
+
+**Scalability**: Facilitates handling of large datasets and complex analyses that are common in bioinformatics.
+
+**Automation**: Reduces manual intervention, minimizes errors, and saves time by automating repetitive tasks
+
+**Collaboration**: Provides a standardized way for researchers to share workflows and collaborate on projects. 
+
+**Documentation**: Keeps a detailed record of all steps and parameters used in the analysis 
+
+**Flexibility**: Allows easy updates and modifications to the workflow as new tools and methods become available.
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Workflow = Graph
+</div>
+
+
+ </div>
+
+
+
+
+
+<div class="callout callout-color2">
+<div class="callout-title">
+<div class="callout-icon">
+
+<i class="fas fa-fire-alt" ></i>
+
+
+</div>
+<div class="callout-title-inner">
+
+Graph definition
+
+</div>
+</div>
+<div class="callout-content">
+
+`$G =  (V, E)$`
+
+A Graph `$G$` is composed of a set of vertices `$V$` and a set of edges `$E$` connecting vertices in `$V$`
+
+</div>
+</div>
+<!-- .element: style="width: 80%" -->
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Directed Acyclic Graph (DAG)
+</div>
+
+
+ </div>
+
+
+
+
+<split>
+
+<img src="Images/pipelines_lora_1.png" alt="" style="width: 250px; height: 400px; object-fit: fill">
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+<img src="Images/pipelines_lora_nodag.png" alt="" style="width: 250px; height: 480px; object-fit: fill" class="fragment fade-left" data-fragment-index="1">
+
+</split>
+
+<div class="" style="position: absolute; left: 10%; top: 80%; height: 10%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Loops (cycle) are not possible in the DAG <!-- .element: class="fragment fade-left" data-fragment-index="1" -->
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Scalability with embarassingly parallel problem
+</div>
+
+
+ </div>
+
+
+
+
+<split>
+<img src="Images/pipelines_lora_1.png" alt="" style="width: 250px; height: 450px; object-fit: fill">
+
+<img src="Images/pipelines_lora_1.png" alt="" style="width: 250px; height: 450px; object-fit: fill" class="fragment fade-left" data-fragment-index="2">
+
+<img src="Images/pipelines_lora_1.png" alt="" style="width: 250px; height: 450px; object-fit: fill" class="fragment fade-left" data-fragment-index="3">
+
+<img src="Images/pipelines_lora_1.png" alt="" style="width: 250px; height: 450px; object-fit: fill" class="fragment fade-left" data-fragment-index="4">
+
+</split>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Input / Output paradigm
+</div>
+
+
+ </div>
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 5%; height: 80%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/workflow_complete.png" alt="" style="width: 850px; height: 450px; object-fit: fill">
+
+</div>
+
+<div class="" style="position: absolute; left: 1%; top: 70%; height: 20%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+In Snakemake flow of processes are driven by Input / Output files
+</div>
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Installing Snakemake
+</div>
+
+
+ </div>
+
+
+
+
+<div class="has-light-background" style="background-color: gray; position: absolute; left: 0%; top: 10%; height: 20%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+System requirements : any platform with Python installed on it
+</div>
+
+<div class="" style="position: absolute; left: 0%; top: 30%; height: 60%; width: 45%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Installation via conda 
+
+```bash
+  conda install -c bioconda snakemake
+```
+<!-- .element: style="width: 99%" -->
+</div>
+
+<div class="" style="position: absolute; left: 50%; top: 30%; height: 60%; width: 45%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Installation via pip
+
+```bash
+  pip install snakemake
+```
+<!-- .element: style="width: 80%; font-size: 0.7em" -->
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Toy Example
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 20%; height: 60%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/dag.sequana.png" alt="" style="object-fit: scale-down">
+
+</div>
+
+<div class="" style="position: absolute; left: 30%; top: 5%; height: 90%; width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Let us consider two FastQ files (independent samples) and let us map them on a reference (measles). The two sample files are named sample A.fastq.gz and sample B.fastq.gz
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Toy Example (naive bash script)
+</div>
+
+
+ </div>
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 20%; height: 60%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/dag.sequana.png" alt="" style="object-fit: scale-down">
+
+</div>
+
+<div class="" style="position: absolute; left: 30%; top: 0%; height: 90%; width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+```bash
+# create a directory
+mkdir -p mapped_sample
+
+# Build the index of the refernce
+bwa index phiX174.fa
+
+# Do the maping twice on the two input FastQ files
+bwa mem measles.fa A.fastq.gz | samtools view -Sb - > A.bam
+bwa mem measles.fa B.fastq.gz | samtools view -Sb - > B.bam
+```
+<!-- .element: style="width: 99%; font-size: 0.5em" -->
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Toy Example (naive bash script)
+</div>
+
+
+ </div>
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 20%; height: 60%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/dag.sequana.png" alt="" style="object-fit: scale-down">
+
+</div>
+
+<div class="" style="position: absolute; left: 30%; top: 0%; height: 90%; width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+```bash
+# create a directory
+mkdir -p results
+
+# Build the index of the refernce
+bwa index phiX174.fa
+
+# Do the maping twice on the two input FastQ files
+bwa mem measles.fa A.fastq.gz | samtools view -Sb - > A.bam
+bwa mem measles.fa B.fastq.gz | samtools view -Sb - > B.bam
+```
+<!-- .element: style="width: 99%; font-size: 0.5em" -->
+
+</div>
+<div class="" style="position: absolute; left: 30%; top: 65%; height: 10%; width: 60%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<span style="background-color:#ffaa11; font-size:24px">
+No loops, no variables, not really scalable. Let us improve it
+</span>
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Toy Example (bash script)
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 20%; height: 60%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/dag.sequana.png" alt="" style="object-fit: scale-down">
+
+</div>
+
+<div class="" style="position: absolute; left: 30%; top: 0%; height: 90%; width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+```bash
+REF="measles.fa"
+ODIR="results"
+SAMPLES=`ls *fastq.gz`
+
+# create a directory
+mkdir -p $ODIR
+
+# Build the index of the reference
+bwa index $REF
+
+# Do the maping twice on the two input FastQ files
+for var in $SAMPLES
+do
+    TARGET=${var/.fastq.gz/.bam}
+    bwa mem `$REF $`var | samtools view -Sb - > `$ODIR/$`TARGET
+done
+
+```
+<!-- .element: style="width: 99%; font-size: 0.45em" -->
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Toy Example (bash script)
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 20%; height: 60%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/dag.sequana.png" alt="" style="object-fit: scale-down">
+
+</div>
+
+<div class="" style="position: absolute; left: 30%; top: 0%; height: 90%; width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+```bash
+REF="measles.fa"
+ODIR="results"
+SAMPLES=`ls *fastq.gz`
+
+# create a directory
+mkdir -p $ODIR
+
+# Build the index of the reference
+bwa index $REF
+
+# Do the maping twice on the two input FastQ files
+for var in $SAMPLES
+do
+    TARGET=${var/.fastq.gz/.bam}
+    bwa mem `$REF $`var | samtools view -Sb - > `$ODIR/$`TARGET
+done
+
+```
+<!-- .element: style="width: 99%; font-size: 0.45em" -->
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+<div class="" style="position: absolute; left: 30%; top: 77%; height: 10%; width: 60%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<span style="background-color:#ffaa11; font-size:24px">
+Issues: <br>
+1. still sequencial <br>
+2. starts from scratch again and again
+</span>
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Basic Concept: the `rule` keyword
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 20%; height: 60%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/dag.sequana.png" alt="" style="object-fit: scale-down">
+
+</div>
+
+<div class="" style="font-size: 0.7em; position: absolute; left: 30%; top: 5%; height: 90%; width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+- **Rule Definition**:
+  - A rule in Snakemake defines a step in your workflow, describing how to create one or more output files from one or more input files.
+  - Each rule consists of a name, input files, output files, and a shell command or script to execute.
+```python
+rule example:
+		input:
+		    "data/input.txt"
+	    output:
+	        "results/output.txt"
+	    shell:
+	        "wc {input} > {output}"
+```
+<!-- .element: style="width: 99%; font-size: 0.65em" -->
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Basic concept: the special *all* `rule`
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 20%; height: 60%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/dag.sequana.png" alt="" style="object-fit: scale-down">
+
+</div>
+
+<div class="" style="font-size: 0.6em; position: absolute; left: 30%; top: 0%; height: 99%; width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+- The `all` rule is a special rule in Snakemake that has no output of its own. Instead, it specifies the final targets of the workflow (here the `report` rule's output)
+
+```python
+rule all:     
+	input:         
+		"results/report.txt"`
+```
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+- **Name**: `all` is the name of the special rule.
+- **Input**: Lists all the files that need to be generated by the workflow for it to be considered complete.
+- **No Output**: The `all` rule does not have an output section because its role is to tie together the final outputs of the workflow.
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Basic Concept: `rule` indentation
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.7em; position: absolute; left: 5%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Like in Python, Snakefile must define rules with careful indentation
+```python
+rule example:
+		input:
+		    "data/input.txt"
+	    output:
+	        "results/output.txt"
+	    shell:
+	        "wc {input} > {output}"
+```
+
+equivalent to 
+
+```python
+rule example:
+		input: "data/input.txt"
+	    output: "results/output.txt"
+	    shell: "wc {input} > {output}"
+```
+</div>
+
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Basic concept: wildcards
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 20%; height: 60%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/dag.sequana.png" alt="" style="object-fit: scale-down">
+
+</div>
+
+<div class="" style="font-size: 0.53em; position: absolute; left: 30%; top: 0%; height: 99%; width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+- Wildcards are placeholders used in rule definitions to make them more flexible and general.
+- Wildcards patterns in file names and paths can be dynamically replaced with actual values during workflow execution.
+
+```python
+rule bwa_mapping:
+    input:
+        "data/{sample}.txt"
+    output:
+        "results/{sample}.processed.txt"
+    shell:
+        "bwa mem {input} -o {output}"
+```
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+- **Wildcard**: `{sample}` is a wildcard that can match different values.
+- **Input and Output**: The input and output paths use the `{sample}` wildcard to dynamically generate file names based on the sample name.
+- **Shell Command**: The shell command also uses `{input}` and `{output}` placeholders which Snakemake replaces with the actual file paths.
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Basic concepts: wildcards
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.753em; position: absolute; left: 20%; top: 0%; height: 99%; width: 60%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Accessing to the wildcard using **wildcards** keyword.
+```python
+rule bwa_mapping:
+    input:
+        "data/{sample}.txt"
+    output:
+        "results/{sample}.processed.txt"
+    shell:
+        """
+        
+        bwa mem {input} -o {output}
+	    echo {wildcards.sample}
+        """
+```
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Toy example in Snakemake
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 20%; height: 60%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/dag.sequana.png" alt="" style="object-fit: scale-down">
+
+</div>
+
+<div class="" style="font-size: 0.78em; position: absolute; left: 25%; top: 0%; height: 100%; width: 77%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+
+```python
+filenames = ["A", "B"]
+
+rule all:
+    input: expand("results/{sample}.bam", sample=filenames)
+
+rule bwa_index:
+    input: "measles.fa"
+    output: "measles.fa.bwt"
+    shell: "bwa index {input}"
+
+rule bwa_mapping:
+    input:
+        ref = "measles.fa",
+        index = "measles.fa.bwt",
+        fastq = "{sample}.fastq.gz"
+    output: "results/{sample}.bam"
+    shell:
+        "bwa mem {input.ref} {input.fastq} | samtools view -Sb - > {output}"
+```
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Snakemake advantages
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.75em; position: absolute; left: 0%; top: 0%; height: 100%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+- Snakemake takes the best of Makefile: 
+  - infers dependencies and execution order 
+  - rules define output files from input files 
+  - structured pipelines 
+- Snakemake combines its own syntax with Python syntax making it highly flexible 
+  - Own domain specific syntax (rules and keywords) 
+  - Use Python as the glue language 
+  - The snakemake library itself is in Python
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="color: blue; text-align: left; position: absolute; left: 10%; top: 40%; height: 20%; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<u>Part II:  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;
+</u><br>
+Snakemake Syntax
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Toy example 2
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="text-align: justify; font-size: 0.76em; position: absolute; left: 5%; top: 2%; height: 100%; width: 90%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+The goal is to count the number of reads in a set of FastQ files. <br>
+As a reminder here is the format of a FastQ files: 
+```
+@HISEQ:426:C5T65ACXX:5:2301:5633:72031::0:GTGAAA 
+TTGCTTAATTCTATACTCATCCTCTACAGGGAGTTGGCAAGATTCAAAGACAACCAAAGAAGTCAAC 
++ 
+CCCFFFFFHHHHHJJJIIHIJJJJJJJJ@HEHIJJJJIJJJJIAHIIJIIJJIJIIJJIIHGIFFAJ
+@HISEQ:426:C5T65ACXX:5:2301:5633:72032::0:GTGAAA
+TTGCTTAATTCTATACTCATCCTCTACAGGGAGTTGGCAAGATTCAAAGACAACCAAAGAAGTCAAC 
++ 
+CCCFFFFFHHHHHJJJIIHIJJJJJJJJ@HEHIJJJJIJJJJIAHIIJIIJJIJIIJJIIHGIFFAJ
+```
+<!-- .element: style="width: 99%; font-size: 0.6em" -->
+Each sequence read is described by 4 lines. The first line is the identifier starting with @, the second line is the DNA sequence, the third line (+ character) is a separator and the fourth line is the quality of each nucleotide.
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Toy example 2: naive implementation
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 10%; height: 80%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/example1.sequana.png" alt="" style="width: 150px; height: 350px; object-fit: fill">
+
+</div>
+
+<div class="" style="font-size: 0.85em; position: absolute; left: 25%; top: 0%; height: 100%; width: 77%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+
+```python
+rule all:
+    input: 
+	    "stats/A.txt"
+
+rule count:
+    input: "A.fastq"
+    output: "stats/A.txt"
+    shell:
+        "wc A.fastq > stats/A.txt"
+```
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Create the dag
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.7em; position: absolute; left: 10%; top: 20%; height: 60%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+To generate the image representing your workflow including all samples:
+
+```bash
+
+     snakemake -s Snakefile --dag | dot -Tpng -o dag.png
+
+
+```
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+
+If you have many samples, the dag is too complex, and a simpler
+representation is the rulegraph. It shows only the rules (excluding 
+the true DAG with all samples)
+
+```bash
+
+    snakemake -s Snakefile --rulegraph | dot -Tpng -o rg.png
+
+
+```
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Execute the workflow
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.7em; position: absolute; left: 10%; top: 20%; height: 60%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+To execute the workflow
+
+```bash
+
+     snakemake -s Snakefile --cores 1
+
+
+```
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+
+This will create the file called A.txt in the directory ./stats
+Note that the directory is created automatically. If you run the pipeline again,
+nothing will happen. Indeed, the expected output file (stats/A.txt) exists
+already and the input file has not changed. If the input of a rule changes, the
+rule is executed again.
+<!-- .element: style="width: 99%; font-size: 0.9em; text-align: justify" -->
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Syntax: special {input} and {output} syntax
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 10%; height: 80%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/example1.sequana.png" alt="" style="width: 150px; height: 350px; object-fit: fill">
+
+</div>
+
+<div class="" style="font-size: 0.85em; position: absolute; left: 25%; top: 0%; height: 100%; width: 77%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+
+In the shell command, we can reuse the variable names {input} and
+{output}. Note the accolades
+
+```python
+rule all:
+    input: 
+	    "stats/A.txt"
+
+rule count:
+    input: "A.fastq"
+    output: "stats/A.txt"
+    shell:
+        """
+        # wc A.fastq > stats/A.txt
+        # is now:
+        wc {input} > {output}
+        """
+```        
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Syntax: special {input} and {output} syntax
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 10%; height: 80%; width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/example1.sequana.png" alt="" style="width: 150px; height: 350px; object-fit: fill">
+
+</div>
+
+<div class="" style="font-size: 0.85em; position: absolute; left: 25%; top: 0%; height: 100%; width: 77%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+As mentionned before, we can use wildcards to generalise the number of samples (embarassingly parallelled processes)
+
+```python
+rule all:
+    input: 
+	    "stats/A.txt"
+
+rule count:
+    input: "A.fastq"
+    output: "stats/A.txt"
+    shell:
+        """
+        # wc A.fastq > stats/A.txt
+        # is now:
+        wc {input} > {output}
+        """
+```        
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Concepts: wildcards
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 10%; height: 80%; width: 28%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/example2.sequana.png" alt="" style="width: 280px; height: 350px; object-fit: fill">
+
+</div>
+
+<div class="" style="font-size: 0.85em; position: absolute; left: 22%; top: 0%; height: 100%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+As mentionned before, we can use wildcards to generalise the number of samples (embarassingly parallelled processes)
+
+```python
+samples = ["A", "B"]
+rule all:
+    input: 
+	    "stats/A.txt", "stats/B.txt"
+
+rule count:
+    input: "{sample}.fastq"
+    output: "stats/{sample}.txt"
+    shell:
+        """
+        wc {input} > {output}
+        """
+```        
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Syntax: the expand function
+</div>
+
+
+ </div>
+
+
+
+
+
+<div class="" style="font-size: 0.85em; position: absolute; left: 10%; top: 0%; height: 100%; width: 77%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+The expand function (from Snakemake), creates a list by replacing a wildcard with a set of names defined in the Python code of the pipeline.
+
+```python
+samples = ["A", "B"]
+rule all:
+    input: 
+	    expand("stats/{samples}.txt", sample=samples)
+
+rule count:
+    input: "{sample}.fastq"
+    output: "stats/{sample}.txt"
+    shell:
+        """
+        wc {input} > {output}
+        """
+```        
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Syntax: escaped curly brackets
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.68em; text-align: justify; position: absolute; left: 10%; top: 0%; height: 90%; width: 87%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<br>Let us finalise the pipeline with a correct shell command to divide final count by 4
+```python
+samples = ["A", "B"]
+rule all:
+    input: 
+	    expand("stats/{samples}.txt", sample=samples)
+
+rule count:
+    input: "{sample}.fastq"
+    output: "stats/{sample}.txt"
+    shell:
+        """
+        wc {input} | awk ' END {{ print $1 / 4 }} ' - > {output}
+        """
+```
+The `awk` tool uses curly brackets. In snakemake, curly brackets are also part of the syntax, so to avoid confusion, they should be escaped (duplicated here)
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+From Shell to Python
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.68em; text-align: justify; position: absolute; left: 10%; top: 0%; height: 90%; width: 87%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<br>Using Python in a rule is simple: replace `shell` with `run`. Note that the (triple) quotes are not required anymore.
+
+```python
+samples = ["A", "B"]
+rule all:
+    input: 
+	    expand("stats/{samples}.txt", sample=samples)
+
+rule count:
+    input: "{sample}.fastq"
+    output: "stats/{sample}.txt"
+    run:
+        count = 0
+        with open(input[0], 'r') as fin:
+            for line in fin.readlines():
+                count += 1
+        with open(output[0], "w") as fout:
+            N = int(count / 4)
+            fout.write("{}".format(N))
+
+```
+
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Execute the workflow (again)
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.65em; position: absolute; left: 10%; top: 20%; height: 60%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+If output files are already present, you can force the execution of
+the entire pipeline: 
+
+
+```bash
+
+	snakemake -s Snakefile --cores 1 --forceall
+
+
+```
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+
+Since we have two samples, we can use 2 cores:
+
+```
+     snakemake -s Snakefile --cores 2
+
+```
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Execute the workflow (arbitrary name)
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.7em; position: absolute; left: 10%; top: 20%; height: 60%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+So far we used:
+```bash
+
+	snakemake -s Snakefile --cores 1
+
+
+```
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+In fact you can simply type:
+```bash
+
+	snakemake -c1
+
+
+```
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+and use the -s option only if you did not name your pipeline `Snakefile`
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+From inline Python to external script: the Snakefile
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.85em; position: absolute; left: 10%; top: 5%; height: 80%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+If your code is complex, you can use external script using `script` keyword
+
+```
+samples = ['A', 'B']
+
+rule all:
+  input:
+    expand("stats/{sample}.txt", sample=samples)
+
+rule count:
+  input: "{sample}.fastq"
+  output: "stats/{sample}.txt"
+  script: "script.py"
+
+```
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+From inline Python to external script: the script
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.9em; position: absolute; left: 10%; top: 5%; height: 80%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+In the script you must use the snakemake namespace
+
+```python
+
+count = 0
+with open(snakemake.input[0], 'r') as fin:
+    for line in fin.readlines(): 
+	    count += 1
+	    
+with open(snakemake.output[0], "w") as fout:
+    N = int(count / 4)
+    fout.write(f"{N}")
+
+```
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+The onsuccess section
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.65em; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Once all the rules are executed, you may have a final section. 
+Usually, this is to create reports, indicates potential issues.
+```python
+samples = ['A', 'B']
+
+rule all:
+    input:
+        expand("stats/{sample}.txt", sample=samples)
+
+rule count:
+    input: "{sample}.fastq"
+    output: "stats/{sample}.txt"
+    script: "script.py"
+
+onsuccess:
+    # This is Python code here; you can use the shell() function
+    import glob
+    with open("out.html", "w") as fout:
+        for filename in glob.glob("stats/*.txt"):
+            res = open(filename, "r").read()
+            fout.write(f"{filename}:{res}<br>")
+```
+<!-- .element: style="width: 99%; font-size: 0.6em" -->
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+The onerror section
+</div>
+
+
+ </div>
+
+
+
+
+
+<div class="" style="font-size: 0.65em; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Of course, it may fail, in which case, you may also want to add 
+information 
+```python
+samples = ['A', 'B']
+
+rule all:
+    input:
+        expand("stats/{sample}.txt", sample=samples)
+
+rule count:
+    input: "{sample}.fastq"
+    output: "stats/{sample}.txt"
+    script: "script.py"
+
+onsuccess:
+    # do something
+
+onerror:
+    # do something else
+
+    
+```
+<!-- .element: style="width: 99%; font-size: 0.6em" -->
+</div>
+
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="color: blue; text-align: left; position: absolute; left: 10%; top: 40%; height: 20%; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<u>Part III:  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;
+</u><br>
+Snakemake Advanced Syntax
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Multiple input / output files
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.72em; text-align: justify; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+So far we used a workflow with home-made script based (one thread).
+Here, we perform a quality control with **fastqc** tool. It takes one FastQ file as input and creates two output files (1 HTML, 1 zip file).
+
+```python
+samples = ['A', 'B']
+
+rule all:
+    input: expand("fastqc/{sample}_fastqc.html", sample=samples)
+
+rule fastqc:
+    input: "{sample}.fastq.gz"
+    output:
+        html="fastqc/{sample}_fastqc.html",
+        zip="fastqc/{sample}_fastqc.zip"
+    shell: "fastqc {input} -o fastqc"
+```
+<!-- .element: style="width: 99%; font-size: 0.6em" -->
+**The output is a list of items separated by commas**. You can name them.
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+logging
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.72em; text-align: justify; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+
+When executing the previous workflow, fastqc prints lots of no essential information on the screen. Let us catch the stdout/stderr in a log file by using a new keyword:  **log**.
+
+```python
+rule fastqc:
+    input: 
+        "{sample}.fastq.gz"
+    output:
+        html="fastqc/{sample}_fastqc.html",
+        zip="fastqc/{sample}_fastqc.zip"
+    log: 
+        "logs/{sample}.log"
+    shell: 
+        "fastqc {input} -o fastqc >{log} 2>&1"
+```
+<!-- .element: style="width: 99%; font-size: 0.7em" -->
+
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Threading
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.65em; text-align: justify; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Disjoint paths in the DAG of jobs can be executed in parallel using -\--cores argument:
+```
+
+    snakemake --cores 8
+    
+```
+<!-- .element: style="width: 99%; font-size: 0.7em" -->
+We can be more specific inside the rules with the **threads** keyword:
+```
+rule fastqc:
+    input: BLA
+    output: BLI
+    threads: 4 
+    shell: "fastqc -t {threads} {input} > {output}"
+```
+<!-- .element: style="width: 99%; font-size: 0.7em" -->
+And use the same command as above
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+The `params` keyword
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.65em; text-align: justify; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Usually applications or rules required some flexible parameters. They can be gathered with the `params` keyword.
+
+```
+rule fastqc:
+    input: "{sample}.fastq.gz"
+    output:
+        html="fastqc/{sample}_fastqc.html",
+        zip="fastqc/{sample}_fastqc.zip"
+    params:
+        nogroup=False
+    threads: 4
+    log: "logs/{sample}.log"
+    run: 
+        if params.nogroup:
+            shell("fastqc {input} -o fastqc -t {threads} --nogroup >{log} 2>&1")
+        else:
+            shell("fastqc {input} -o fastqc -t {threads} >{log} 2>&1")
+```
+<!-- .element: style="width: 99%; font-size: 0.7em" -->
+
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+The `resources` keyword
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.7em; text-align: justify; position: absolute; left: 5%; top: 5%; height: 90%; width: 90%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+We can be specific about memory used by a job with the **resources** keyword
+
+```
+rule fastqc:
+    input: "{sample}.fastq.gz"
+    output:
+        html="fastqc/{sample}_fastqc.html",
+        zip="fastqc/{sample}_fastqc.zip"
+    threads: 4
+    resources: mem_mb=1000
+    shell:
+         "fastqc {input} -o fastqc -t {threads}"
+```
+<!-- .element: style="width: 99%; font-size: 0.6em" -->
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+The `resources` keyword
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.8em; text-align: justify; position: absolute; left: 5%; top: 5%; height: 90%; width: 90%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+
+
+you may also contraint the resources when calling snakemake
+```
+
+    snakemake --cores 8 --resources mem_mb=1000
+    
+```
+<!-- .element: style="width: 99%; font-size: 0.6em" -->
+Here one job is executed at a time cause we allocated 1000Mb and each rule requires 1000Mb.
+</div>
+
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Rule Order Evaluation
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.8em; text-align: left; position: absolute; left: 5%; top: 5%; height: 90%; width: 90%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<div>
+A job is executed if
+
+- output file target does not exist
+- output file needed by another executed job and does not exist
+- input file newer than output file
+- execution is enforced (-\-forceall)
+- a target file is required on command line
+
+The order is defined as a breadth-first search on the DAG of the rules.
+You can set priority using the `priority` keyword.
+</div>
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+High-Performance Computing -- Cluster
+</div>
+
+
+ </div>
+
+
+
+
+
+<div class="" style="font-size: 0.8em; text-align: left; position: absolute; left: 5%; top: 5%; height: 90%; width: 90%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<div>
+No intrusive code. It just worked on SGE and then on a SLURM cluster without changing a single line of code !
+
+```bash
+#execute the workflow on cluster with qsub 
+# submission command ( up to 100 parallel jobs ) 
+snakemake --cluster qsub --jobs 100 
+
+# execute the workflow with DRMAA 
+snakemake --drmaa --jobs 100 
+
+# execute the workflow on cluster with sbatch ( SLURM ) 
+snakemake --cluster " sbatch --qos fast " --jobs 100
+```
+
+</div>
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Other topics
+</div>
+
+
+ </div>
+
+
+
+
+
+<div class="" style="font-size: 0.8em; text-align: left; position: absolute; left: 5%; top: 5%; height: 90%; width: 90%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<div>
+
+- handles temporary and protected files
+- run until a given rule
+- run from a given rule
+- benchmark a rule
+- any external scripts (R, Python, etc)
+- handles remote files (http, ftp, google, etc)
+- can include rules and sub workflow.
+</div>
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="color: blue; text-align: left; position: absolute; left: 10%; top: 40%; height: 20%; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<u>Part IV:  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;
+</u><br>
+Organising
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Include external rules 1/2
+</div>
+
+
+ </div>
+
+
+
+<div class="" style="font-size: 0.85em; text-align: justify; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+How to re-use an existing rule / recipes ? Consider this example
+
+
+```
+rule all:
+    input: "b.txt"
+
+rule test:
+    input: "a.txt"
+    output: "b.txt"
+    run:
+        with open(output[0], "w") as fout:
+            fout.write("example")
+```
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Include external rules 2/2
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.85em; text-align: justify; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+ Define the rule in an external file (`rule.smk`)
+```
+rule test:
+    input: "a.txt"
+    output: "b.txt"
+    run:
+        with open(output[0], "w") as fout:
+            fout.write("example")
+```
+
+and simplify the main Snakefile using the **include keyword**:
+
+```
+rule all:
+    input: "b.txt"
+
+include: "rule.smk"
+```
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Configuration files
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.65em; text-align: justify; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+A good practice is to have a configuration file associated with the main snakefile
+You can use the keywords **configfile** and  **config**
+```snakemake
+
+configfile: "config.yaml"
+
+rule test:
+    input: "a.txt"
+    output: "b.txt"
+	resources:
+	   mem_mb=config["mem_value"]
+    run:
+        with open(output[0], "w") as fout:
+            fout.write("example")
+```
+
+and create the config file in YAML format (called **config.yaml**)
+
+```
+# a list of key=value pairs (can be more advanced syntax)
+mem_value=1000
+```
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Wrappers
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.65em; text-align: justify; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Existing scripts may be available online and could be reused to replace the run section.
+
+```snakemake
+rule bamtools_index:
+    input:
+        "{sample}/bamtools/{sample}.sorted.bam
+    output:
+        "{sample}/bamtools/{sample}.sorted.bai
+    log:
+        "{sample}/bamtools/bamtools_index.log"
+    wrapper:
+        "main/wrappers/bamtools/index"
+```
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+The Sequana Wrappers
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="position: absolute; left: 80%; top: 10%; height: 30%; width: 20%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/sequana_logo.png" alt="" style="width: 200px; height: 200px; object-fit: fill">
+
+</div>
+
+<div class="" style="font-size: 0.65em; text-align: justify; position: absolute; left: 10%; top: 5%; height: 90%; width: 70%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+ The Sequana project (https://sequana.readthedocs.io) provides NGS snakemake pipelines (e.g., RNAseq, Long read assembly, variant calling, denovo, QCs, etc). It is available on https://github.com/sequana where we also provide a set of dedicated wrappers.
+ 
+ You can clone the wrappers repository from github and use it locally:
+ ```snakemake
+ git clone https://github.com/sequana/sequana-wrappers.git
+ snakemake -s Snakefile --wrapper-prefix git+file:local_repository
+ ```
+ <!-- .element: style="width: 99%; font-size: 0.7em" -->
+ 
+ Or directly use the repository from github:
+ ```snakemake
+  snakemake -s Snakefile --wrapper-prefix  \
+         https://raw.githubusercontent.com/sequana/sequana-wrappers/
+```
+<!-- .element: style="width: 99%; font-size: 0.7em" -->
+</div>
+ 
+
+
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="color: blue; text-align: left; position: absolute; left: 10%; top: 40%; height: 20%; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<u>Part V:  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;
+</u><br>
+Reproducibility
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+The `conda` keyword
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.7em; text-align: justify; position: absolute; left: 5%; top: 10%; height: 20%; width: 90%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+You can create conda environment for a given rule by providing a conda environment file.
+</div>
+
+<div class="" style="position: absolute; left: 5%; top: 10%; height: 90%; width: 52%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+```
+rule fastqc:
+    input: "{sample}.fastq.gz"
+    output:
+        html="fastqc/{sample}_fastqc.html",
+        zip="fastqc/{sample}_fastqc.zip"
+    threads: 4
+    conda: "envs/fastqc.yaml"
+    shell:
+         "fastqc {input} -o fastqc -t {threads}"
+```
+<!-- .element: style="width: 99%; font-size: 0.45em" -->
+</div>
+
+<div class="" style="font-size: 0.8em; position: absolute; left: 60%; top: 5%; height: 90%; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+The conda file looks like:
+```
+name: fastqc
+channels: 
+  - defaults 
+  - bioconda 
+  - conda-forge 
+dependencies: 
+  - fastqc
+```
+<!-- .element: style="width: 99%; font-size: 0.6em" -->
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+The `conda` keyword
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.8em; text-align: justify; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+To execute the Snakefile using conda, add -\-use-conda
+
+```
+
+    snakemake -s Snakefile -c 1 --use-conda
+    
+```
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+</div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+The `singularity` keyword
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.7em; text-align: justify; position: absolute; left: 5%; top: 5%; height: 90%; width: 90%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+In order to use singularity containers, add the container keyword and use an existing container from docker, or existing URL.
+
+```
+rule fastqc:
+    input:
+        "{sample}.fastq.gz"
+    output:
+        html="fastqc/{sample}_fastqc.html",
+        zip="fastqc/{sample}_fastqc.zip"
+    threads: 4
+    log:
+        "logs/{sample}.log"
+    container:
+        "https://zenodo.org/record/5708811/files/fastqc_0.11.9.img"
+    shell:
+        """fastqc {input} -o fastqc -t {threads} >{log} 2>&1 """
+
+```
+<!-- .element: style="width: 99%; font-size: 0.6em" -->
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+The `singularity` keyword
+</div>
+
+
+ </div>
+
+
+
+
+<div class="" style="font-size: 0.8em; text-align: justify; position: absolute; left: 10%; top: 5%; height: 90%; width: 80%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+To execute the Snakefile using the containers, add -\-use-singularity
+
+```
+
+    snakemake -s Snakefile -c 1 --use-singularity
+    
+```
+<!-- .element: style="width: 99%; font-size: 0.8em" -->
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Use Singularity instead of Conda
+</div>
+
+
+ </div>
+
+
+
+
+<split left="6" right="1" gap="1" style="font-size:30px">
+
+Python dependencies can be handled with virtual environments (pyenv, poetry, etc.)
+
+ <i color="green" class="fas fa-check fa-4x"></i>
+
+</split>
+
+<split left="1" right="6" gap="1" style="font-size:30px">
+
+<i color="orange" class="fa fa-exclamation-triangle fa-3x "></i>
+
+However, pipelines depend on third-party tools. They may be handled through conda.
+
+</split>
+
+<split left="6" right="1" gap="1" style="font-size:30px">
+
+Many pipelines lead to headaches even with conda and cause trouble with the balance of  a reproducible environment and agile development. 
+
+<img src="Images/cross.png" alt="" style="width: 10px; height: 80px; object-fit: fill">
+
+</split>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Some issues with containers
+</div>
+
+
+ </div>
+
+
+
+
+<span style="font-size:28px">
+Containers should be available somewhere . Are they accessible to the end-users ?
+
+Are they going to be **available** in some years ?
+
+Are they **tested**
+
+Do they have **versions** ?
+
+Is there a common entry point ?
+
+If a container is used in a workflow, can I easily download and test it locally (for debugging).
+
+</span>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Damona
+</div>
+
+
+ </div>
+
+
+
+
+<img src="Images/damona_logo.png" alt="" style="object-fit: scale-down">
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Goals
+</div>
+
+
+ </div>
+
+
+
+
+How to remove needs for conda while keeping high reproducibility using containers.
+ 
+Store container recipes in a common place
+ <!-- .element: class="fragment fade-up" data-fragment-index="1" -->
+ 	
+Provides images on public space with DOI
+ <!-- .element: class="fragment fade-up" data-fragment-index="2" -->
+ 
+A way to install binaries found in the containers in your environment: a container manager
+ <!-- .element: class="fragment fade-up" data-fragment-index="3" -->
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Damona installation
+</div>
+
+
+ </div>
+
+
+
+
+<div>
+Damona is developed in Python, to install it just type:
+
+```
+pip install damona
+```
+
+The first time you use **Damona**, you will be asked to update your bashrc file and open a new shell to activate the changes.
+
+on pasteur cluster, you will need to set this variable for singularity:
+
+```bash
+    export DAMONA_SINGULARITY_OPTIONS=" -B /pasteur -e"
+```
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Damona. How to create environment and install tools
+</div>
+
+
+ </div>
+
+
+
+
+
+```
+# Damona itself
+damona create TEST
+damona activate TEST
+damona install fastqc
+damona install bwa
+damona install pangolin
+damona install ivar
+damona install nextclade
+```
+<!-- .element: style="width: 50%; font-size: 28px" -->
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Damona (https://github.com/cokelaer/damona)
+</div>
+
+
+ </div>
+
+
+
+<split even>
+<img src="Images/damona_techno.png" alt="" style="width: 600px; object-fit: fill">
+
+</split>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Damona (https://github.com/cokelaer/damona)
+</div>
+
+
+ </div>
+
+
+
+<split even>
+<img src="Images/damona_techno.png" alt="" style="width: 600px; object-fit: fill">
+
+
+<br>Damona is a singularity environment manager.<br><br>81 containers and 132 versions<br><br>461 tools
+
+</split>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Damona (https://github.com/cokelaer/damona)
+</div>
+
+
+ </div>
+
+
+
+<split even>
+<img src="Images/damona_techno.png" alt="" style="width: 600px; object-fit: fill">
+
+
+<br>Damona is a singularity environment manager.<br><br>84 containers and 132 versions<br><br>461 tools
+</split>
+
+<div class="" style="font-size: 35px; position: absolute; left: 40%; top: 35%; height: 100%; width: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+<a href="https://sequana.github.io/talks/2024_repro_IP/"> https://sequana.github.io/talks/2024_repro_IP</a></div>
+
+
+
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+How to use Damona containers ?
+</div>
+
+
+ </div>
+
+
+
+
+
+<div class="" style="font-size: 0.7em; text-align: justify; position: absolute; left: 5%; top: 5%; height: 90%; width: 90%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Find the URL of a container on zendo.org/communities/damona/records
+and include it in the container section.
+
+```
+rule fastqc:
+    input:
+        "{sample}.fastq.gz"
+    output:
+        html="fastqc/{sample}_fastqc.html",
+        zip="fastqc/{sample}_fastqc.zip"
+    threads: 4
+    log:
+        "logs/{sample}.log"
+    container:
+        "https://zenodo.org/record/5708811/files/fastqc_0.11.9.img"
+    shell:
+        """fastqc {input} -o fastqc -t {threads} >{log} 2>&1 """
+
+```
+<!-- .element: style="width: 99%; font-size: 0.6em" -->
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Sequana (<span style="color:red">Sequ</span>ence <span style="color:red">Ana</span>lysis)
+</div>
+
+
+ </div>
+
+
+
+
+<img src="Images/logos/logo_sequana.png" alt="" style="width: 300px; height: 300px; object-fit: fill">
+
+
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Sequana (<span style="color:red">Sequ</span>ence <span style="color:red">Ana</span>lysis)
+</div>
+
+
+ </div>
+
+
+
+
+
+<div class="" style="position: absolute; left: 0%; top: 10%; height: 80%; width: 20%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/logos/logo_python.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+<img src="Images/logos/logo_snakemake.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+<img src="3-Resources/Images/icons/icon_exe.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+
+<div class="" style="text-align: left; font-size: 32px; position: absolute; left: 10%; top: 10%; height: 80%; width: 60%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+
+Python library <br><a href="https://github.com/sequana/sequana">https://github.com/sequana/sequana </a>
+
+***
+<hr>
+&nbsp;&nbsp;&nbsp;    A set of Snakemake pipelines dedicated to NGS<br>
+
+
+***
+A set of standalone applications
+</div>
+
+<div class="" style="font-size: 18px; border: 3px solid; text-align: left; padding: 5px; top-margin: 0; position: absolute; left: 62%; top: 15%; height: 20%; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+Sequana: a Set of Snakemake NGS pipelines
+Journal of Open Source Software, 2(16), 352, [JOSS DOI doi:10.21105/joss.00352](http://www.doi2bib.org/bib/10.21105%2Fjoss.00352), Cokelaer et al, (2017)
+</div>
+
+<div class="" style="border: 3px solid; text-align: left; padding: 5px; top-margin: 0; position: absolute; left: 62%; top: 58%; height: 20%; width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+
+<img src="Images/citation_sequana_coverage.png" alt="" style="object-fit: scale-down">
+
+</div>
+
+<div class="" style="font-size: 35px; position: absolute; left: 30%; top: 35%; height: 100%; width: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center" >
+<a href="https://sequana.github.io/talks/2024_repro_IP/"> https://sequana.github.io/talks/2024_repro_IP</a></div>
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Conclusions
+</div>
+
+
+ </div>
+
+
+
+
+<div style="text-align:left; width:90%; font-size:1em">
+<span style="color:blue"><b>Mature</b><br>
+<span style="color:black">Snakemake is a mature tool ready for production.</span>
+</span>
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Conclusions
+</div>
+
+
+ </div>
+
+
+
+
+<div style="text-align:left; width:90%; font-size:0.6em">
+<span style="color:blue"><b>Mature</b><br>
+<span style="color:black">Snakemake is a mature tool ready for production.</span>
+</span>
+</div>
+
+<div style="text-align:left; width:90%; font-size:1em">
+<span style="color:blue"><b>Batteries included</b><br>
+<span style="color:black">To cite just one great feature: free parallelization on a cluster. </span>
+</span>
+</div>
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Conclusions
+</div>
+
+
+ </div>
+
+
+
+
+<div style="text-align:left; width:90%; font-size:0.6em">
+<span style="color:blue"><b>Mature</b><br>
+<span style="color:black">Snakemake is a mature tool ready for production.</span>
+</span>
+</div>
+
+<div style="text-align:left; width:90%; font-size:0.6em">
+<span style="color:blue"><b>Batteries included</b><br>
+<span style="color:black">To cite just one great feature: free parallelization on a cluster. </span>
+</span>
+</div>
+
+<div style="text-align:left; width:90%; font-size:1em">
+<span style="color:blue"><b>Nice Syntax</b><br>
+<span style="color:black">
+The syntax is in Python, the library is in Python. Nevertheless, only a minimalist knowledge is required to get started since nice functions are already provided (e.g. expand). 
+</span>
+</span>
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Conclusions
+</div>
+
+
+ </div>
+
+
+
+
+<div style="text-align:left; width:90%; font-size:0.6em">
+<span style="color:blue"><b>Mature</b><br>
+<span style="color:black">Snakemake is a mature tool ready for production.</span>
+</span>
+</div>
+
+<div style="text-align:left; width:90%; font-size:0.6em">
+<span style="color:blue"><b>Batteries included</b><br>
+<span style="color:black">To cite just one great feature: free parallelization on a cluster. </span>
+</span>
+</div>
+
+<div style="text-align:left; width:90%; font-size:0.6em">
+<span style="color:blue"><b>Nice Syntax</b><br>
+<span style="color:black">
+The syntax is in Python, the library is in Python. Nevertheless, only a minimalist knowledge is required to get started since nice functions are already provided (e.g. expand). 
+</span>
+</span>
+</div>
+
+<div style="text-align:left; width:90%; font-size:1em">
+<span style="color:blue"><b>Large Community</b><br>
+<span style="color:black">
+Large snakemake community. See also the conda/bioconda community
+</span>
+</span>
+</div>
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" data-auto-animate="true" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 600px; width: 1200px; min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0px; box-sizing: border-box; position: absolute; left: 0%; top: 0%; height: 10%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" color="white" align="center">
+
+ <div class="block">
+
+Conclusions
+</div>
+
+
+ </div>
+
+
+
+
+<div style="text-align:left; width:90%; font-size:0.6em">
+<span style="color:blue"><b>Mature</b><br>
+<span style="color:black">Snakemake is a mature tool ready for production.</span>
+</span>
+</div>
+
+<div style="text-align:left; width:90%; font-size:0.6em">
+<span style="color:blue"><b>Batteries included</b><br>
+<span style="color:black">To cite just one great feature: free parallelization on a cluster. </span>
+</span>
+</div>
+
+<div style="text-align:left; width:90%; font-size:0.6em">
+<span style="color:blue"><b>Nice Syntax</b><br>
+<span style="color:black">
+The syntax is in Python, the library is in Python. Nevertheless, only a minimalist knowledge is required to get started since nice functions are already provided (e.g. expand). 
+</span>
+</span>
+</div>
+
+<div style="text-align:left; width:90%; font-size:0.6em">
+<span style="color:blue"><b>Large Community</b><br>
+<span style="color:black">
+Large snakemake community. See also the conda/bioconda community
+</span>
+</span>
+</div>
+
+
+
+
+
+
+
+
+
+
+<div class="has-dark-background" style="background-color: black; padding: 0 0; box-sizing: border-box; position: absolute; left: 0%; top: 91%; height: 9%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center" , color="white">
+
+###### © 2024 Thomas Cokelaer  
+</div>
+
+
+<div class="" style="position: absolute; left: 80%; top: 80%; height: 10%; width: 20%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-evenly" align="right">
+
+<img src="Images/logos/logo_pasteur.png" alt="" style="width: 100px; height: 100px; object-fit: fill">
+
+</div>
+</div></script></section></div>
+    </div>
+
+    <script src="dist/reveal.js"></script>
+
+    <script src="plugin/markdown/markdown.js"></script>
+    <script src="plugin/highlight/highlight.js"></script>
+    <script src="plugin/zoom/zoom.js"></script>
+    <script src="plugin/notes/notes.js"></script>
+    <script src="plugin/math/math.js"></script>
+	<script src="plugin/mermaid/mermaid.js"></script>
+	<script src="plugin/chart/chart.min.js"></script>
+	<script src="plugin/chart/plugin.js"></script>
+	<script src="plugin/customcontrols/plugin.js"></script>
+
+    <script>
+      function extend() {
+        var target = {};
+        for (var i = 0; i < arguments.length; i++) {
+          var source = arguments[i];
+          for (var key in source) {
+            if (source.hasOwnProperty(key)) {
+              target[key] = source[key];
+            }
+          }
+        }
+        return target;
+      }
+
+	  function isLight(color) {
+		let hex = color.replace('#', '');
+
+		// convert #fff => #ffffff
+		if(hex.length == 3){
+			hex = `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+		}
+
+		const c_r = parseInt(hex.substr(0, 2), 16);
+		const c_g = parseInt(hex.substr(2, 2), 16);
+		const c_b = parseInt(hex.substr(4, 2), 16);
+		const brightness = ((c_r * 299) + (c_g * 587) + (c_b * 114)) / 1000;
+		return brightness > 155;
+	}
+
+	var bgColor = getComputedStyle(document.documentElement).getPropertyValue('--r-background-color').trim();
+	var isLight = isLight(bgColor);
+
+	if(isLight){
+		document.body.classList.add('has-light-background');
+	} else {
+		document.body.classList.add('has-dark-background');
+	}
+
+      // default options to init reveal.js
+      var defaultOptions = {
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+        transition: 'default', // none/fade/slide/convex/concave/zoom
+        plugins: [
+          RevealMarkdown,
+          RevealHighlight,
+          RevealZoom,
+          RevealNotes,
+          RevealMath.MathJax3,
+		  RevealMermaid,
+		  RevealChart,
+		  RevealCustomControls,
+        ],
+
+
+    	allottedTime: 900 * 1000,
+
+		mathjax3: {
+			mathjax: 'plugin/math/mathjax/tex-mml-chtml.js',
+		},
+		markdown: {
+		  gfm: true,
+		  mangle: true,
+		  pedantic: false,
+		  smartLists: false,
+		  smartypants: false,
+		},
+
+		mermaid: {
+			theme: isLight ? 'default' : 'dark',
+		},
+
+		customcontrols: {
+			controls: [
+			]
+		},
+      };
+
+      // options from URL query string
+      var queryOptions = Reveal().getQueryHash() || {};
+
+      var options = extend(defaultOptions, {"width":1200,"height":600,"margin":0,"controls":true,"progress":true,"slideNumber":"true","transition":"slide","transitionSpeed":"default"}, queryOptions);
+    </script>
+
+    <script>
+      Reveal.initialize(options);
+    </script>
+  </body>
+
+  <!-- created with Advanced Slides -->
+</html>
