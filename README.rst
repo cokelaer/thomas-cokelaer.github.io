@@ -1,5 +1,4 @@
 
 
-resource for the website http://sequana.github.io
+resource for the website http://thomas-cokelaer.github.io
 
-idea: https://github.com/github/government.github.com
